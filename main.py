@@ -9,10 +9,47 @@ dic = {} # store the chip data
 dic_color = {}
 
 fig, current_ax = plt.subplots()  # make a new plotting range
+axes = plt.axes([0.8, 0.02, 0.15, 0.035])
 
 # Give the location of the file
 loc = ("D:\Makon\python\prjs\Interactive select data\data\example_data.xlsx")
 
+### classes ###
+class Index(object):
+    def push_button(self, event):
+        global dic_color
+        global dic
+        global fig
+        print("button is pressed...")
+        # delet the selected points which has red color
+        for k in dic_color.keys():
+            if dic_color[k] == 'red':
+                del dic[k]
+        dic_color = {k: v for k, v in dic_color.items() if v == 'blue'} # save the points with blue color
+
+        x = list(dic[point][1] for point in dic)
+        y = list(dic[point][2] for point in dic)
+        print(x)
+        print(y)
+        coll = current_ax.scatter(x, y, color=["blue"] * len(x), picker=5, s=[30] * len(x))
+
+        print(dir(coll))
+        print(coll.get_offsets())
+        new_xy = coll.get_offsets()
+        new_xy = np.delete(new_xy, 0,0)
+        print("new xy is:")
+        print(new_xy)
+        coll.set_offsets(new_xy)
+        fig.canvas.draw_idle()
+        plt.pause(1)
+
+
+        #coll = current_ax.scatter(12, 14, color=["white"], picker=5, s=[30])
+
+
+
+        # print(dic_color)
+        # print(dic)
 
 def onselect(eclick, erelease):
     "eclick and erelease are matplotlib events at press and release."
@@ -29,7 +66,23 @@ def onselect(eclick, erelease):
         try:
             if dic_color[point[0]] == 'blue':
                 dic_color[point[0]] = 'red'
-                current_ax.scatter(dic[point[0]][1], dic[point[0]][2], color=["red"] * 1, picker=5, s=[30] * 1)  # red blue
+                #coll = current_ax.scatter(dic[point[0]][1], dic[point[0]][2], color=["red"] * 1, picker=5, s=[30] * 1)  # red blue
+                print(coll.get_facecolor())
+                print(coll.get_offsets())
+                of = coll.get_offsets() # get point x,y which has been ploted
+                index_x = np.where(of[:,0] == dic[point[0]][1]) # find x row
+                index_y = np.where(of[:,1] == dic[point[0]][2])
+                print(of)
+                print(index_x)
+                print(index_y)
+                index_use = np.intersect1d(index_x, index_y) # find the special row, index_use is a ndarray
+                current_color = coll.get_facecolor()
+                current_color[index_use,:] = [1,0,0,1] # change to be red color
+                coll.set_color(current_color)
+                fig.canvas.draw_idle()
+                print(current_color)
+                print("index is :")
+                print(index_use)
             else:
                 dic_color[point[0]] = 'blue'
                 current_ax.scatter(dic[point[0]][1], dic[point[0]][2], color=[0, 0, 1, 1], picker=5, s=[30])
@@ -98,7 +151,15 @@ def main():
     print(x)
     print(y)
 
-    current_ax.scatter(x, y, color=["blue"]*len(x), picker = 5, s=[30]*len(x))
+    global coll
+    coll = current_ax.scatter(x, y, color=["blue"]*len(x), picker = 5, s=[30]*len(x))
+    plt.draw()
+
+
+    #need a button
+    bdraw = Button(axes, 'delet')
+    callback = Index()
+    bdraw.on_clicked(callback.push_button)#
 
     print("\n      click  -->  release")
 
